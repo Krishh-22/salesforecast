@@ -4,14 +4,6 @@ An sales forecasting platform that helps businesses predict future sales trends 
 
 ---
 
-# 🌐 Live Demo
-
-🚀 **Explore the application here:**
-
-**https://salesforecast-0jbd654.public.builtwithrocket.new**
-
----
-
 # ✨ Features
 
 * 📊 Interactive sales analytics dashboard
