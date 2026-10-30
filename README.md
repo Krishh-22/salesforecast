@@ -6,7 +6,7 @@ An sales forecasting platform that helps businesses predict future sales trends 
 
 # ✨ Features
 
-* 📊 Interactive sales analytics dashboard
+* 📊 Interactive sales analytics dashboard.
 * 🤖 AI-powered sales forecasting
 * 📈 Historical sales trend visualization
 * ⚡ Fast and optimized with Next.js 15
