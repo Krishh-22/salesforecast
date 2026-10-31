@@ -37,7 +37,7 @@ const navItems: NavItem[] = [
   { id: 'nav-config', label: 'Forecast Configuration', href: '/forecast-configuration', icon: Settings2 },
   { id: 'nav-reports', label: 'Reports & Export', href: '/reports-export', icon: FileBarChart },
   { id: 'nav-data', label: 'Data Management', href: '/data-management', icon: Database },
-  { id: 'nav-workspace', label: 'Workspace Admin', href: '/workspace-admin', icon: Users },
+  { id: 'nav-workspace', label: 'Account', href: '/workspace-admin', icon: Users },
   { id: 'nav-settings', label: 'User Settings', href: '/user-settings', icon: UserCog },
 ];
 

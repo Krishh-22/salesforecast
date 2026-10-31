@@ -18,7 +18,7 @@ export default function ActualVsPredictedChart() {
         <div>
           <h2 className="text-base font-semibold text-foreground">Actual vs. Predicted Sales</h2>
           <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
-            Revenue with 80% confidence interval · Prophet model
+            Weekly sales: actual, fitted and forecast, with confidence range
           </p>
         </div>
         <div className="flex items-center gap-1 p-1 rounded-lg" style={{ background: 'var(--muted)' }}>

@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main, real-forecasting-engine]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --legacy-peer-deps
+      - name: Forecast engine tests
+        run: npm test
+      - name: Type-check
+        # Non-blocking for now: next.config.mjs sets ignoreBuildErrors, so older files may have type errors.
+        # Remove continue-on-error once `npm run type-check` is clean.
+        continue-on-error: true
+        run: npm run type-check
+      - name: Build
+        run: npm run build
+        env:
+          # Placeholder values so the build can run; the app is not contacted during the build.
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-key
+          NEXT_PUBLIC_SITE_URL: http://localhost:4028

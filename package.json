@@ -47,7 +47,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md,json}\"",
     "serve": "next start",
     "type-check": "tsc --noEmit",
-    "test:forecast": "node --experimental-strip-types --no-warnings tests/forecast.test.mts"
+    "test": "node --experimental-strip-types --no-warnings --test tests/*.test.mts"
   },
   "dependencies": {
     "@dhiwise/component-tagger": "^1.0.15",

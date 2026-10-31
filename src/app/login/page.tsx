@@ -78,17 +78,17 @@ export default function LoginPage() {
               <span style={{ color: 'var(--primary)' }}>for Sales Teams</span>
             </h1>
             <p className="text-base leading-relaxed" style={{ color: 'var(--muted-foreground)' }}>
-              Upload historical data, configure ML forecasting models, and generate accurate
-              revenue predictions with confidence intervals.
+              Upload your sales history, compare forecasting models by backtest, and get
+              predictions with confidence ranges.
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             {[
-              { icon: BarChart2, label: 'Forecast Accuracy', value: '94.2% MAPE' },
-              { icon: TrendingUp, label: 'Revenue Predicted', value: '₹2.4M Q3' },
-              { icon: BarChart2, label: 'Models Supported', value: 'Prophet · ARIMA' },
-              { icon: TrendingUp, label: 'Data Points', value: '500K+ rows' },
+              { icon: BarChart2, label: 'Accuracy', value: 'Measured by backtest' },
+              { icon: TrendingUp, label: 'Forecast Range', value: 'Confidence bands' },
+              { icon: BarChart2, label: 'Models', value: '4 + auto-select' },
+              { icon: TrendingUp, label: 'Data Import', value: 'CSV up to 50 MB' },
             ].map((stat, i) => (
               <div
                 key={i}

@@ -1,0 +1,14 @@
+import { parseDefaults, FACTORY_DEFAULTS } from '../src/lib/settings.ts';
+let fail = 0; const ok = (c: boolean, m: string) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fail++; };
+const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+ok(same(parseDefaults(null), FACTORY_DEFAULTS), 'null -> factory defaults');
+ok(same(parseDefaults(undefined), FACTORY_DEFAULTS), 'undefined -> factory defaults');
+ok(same(parseDefaults('{not json'), FACTORY_DEFAULTS), 'corrupted JSON -> factory defaults');
+ok(same(parseDefaults('[1,2]'), FACTORY_DEFAULTS), 'array -> factory defaults');
+const good = parseDefaults(JSON.stringify({ model: 'holt_winters', horizonWeeks: 24, confidence: 95, seasonality: '13', clipOutliers: false }));
+ok(good.model === 'holt_winters' && good.horizonWeeks === 24 && good.confidence === 95 && good.seasonality === '13' && good.clipOutliers === false, 'valid values round-trip');
+const bad = parseDefaults(JSON.stringify({ model: 'prophet', horizonWeeks: 9999, confidence: -5, seasonality: '7', clipOutliers: 'yes' }));
+ok(bad.model === 'auto' && bad.horizonWeeks === 52 && bad.confidence === 50 && bad.seasonality === 'auto' && bad.clipOutliers === true, 'invalid values clamped / replaced (old "prophet" -> auto)');
+ok(parseDefaults(JSON.stringify({ horizonWeeks: 13 })).horizonWeeks === 12, 'horizon snaps to the 4-week step');
+ok(parseDefaults(JSON.stringify({ horizonWeeks: 'abc', confidence: NaN })).horizonWeeks === 12, 'non-numeric -> default');
+console.log(fail === 0 ? '\nALL PASSED' : `\n${fail} FAILED`); process.exit(fail ? 1 : 0);

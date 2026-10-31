@@ -83,10 +83,10 @@ export default function RegisterPage() {
 
           <ul className="space-y-3">
             {[
-              'Upload CSV/Excel data with drag-and-drop',
-              'Prophet, ARIMA & exponential smoothing models',
-              'Confidence intervals and accuracy metrics',
-              'Export reports as PDF or CSV',
+              'Upload a CSV with drag-and-drop — columns detected automatically',
+              'Four forecasting models, auto-picked by backtesting',
+              'Confidence ranges and measured accuracy (MAPE, RMSE)',
+              'Download reports (print to PDF) and CSV data',
             ].map((feature, i) => (
               <li key={i} className="flex items-center gap-3 text-sm">
                 <div

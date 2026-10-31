@@ -5,6 +5,7 @@ import { Search, Bell, Sun, Moon, RefreshCw, LogOut, CheckCheck, Trash2, X, Chec
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useNotifications, AppNotification } from '@/contexts/NotificationContext';
+import { useDatasets } from '@/contexts/DatasetContext';
 import { useRouter } from 'next/navigation';
 
 interface TopbarProps {
@@ -40,6 +41,26 @@ export default function Topbar({ title, subtitle, lastUpdated }: TopbarProps) {
   const router = useRouter();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotification, clearAll } = useNotifications();
   const notifRef = useRef<HTMLDivElement>(null);
+  const { datasets, forecastRuns } = useDatasets();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // Search the user's own datasets and forecast runs
+  const q = searchValue.trim().toLowerCase();
+  const searchResults = q
+    ? [
+        ...datasets
+          .filter((d) => `${d.name} ${d.fileName}`.toLowerCase().includes(q))
+          .map((d) => ({ key: `d-${d.id}`, kind: 'Dataset', label: d.name, href: '/data-management' })),
+        ...forecastRuns
+          .filter((r) => r.runName.toLowerCase().includes(q))
+          .map((r) => ({ key: `r-${r.id}`, kind: 'Forecast', label: r.runName, href: '/forecast-analysis' })),
+      ].slice(0, 6)
+    : [];
+  const goToResult = (href: string) => {
+    setSearchOpen(false);
+    setSearchValue('');
+    router.push(href);
+  };
 
   // Close notification panel on outside click
   useEffect(() => {
@@ -96,9 +117,41 @@ export default function Topbar({ title, subtitle, lastUpdated }: TopbarProps) {
             type="text"
             placeholder="Search datasets, forecasts…"
             value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
+            onChange={(e) => {
+              setSearchValue(e.target.value);
+              setSearchOpen(true);
+            }}
+            onFocus={() => setSearchOpen(true)}
+            onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setSearchOpen(false);
+              if (e.key === 'Enter' && searchResults[0]) goToResult(searchResults[0].href);
+            }}
             className="input-field pl-8 w-56 h-9 text-sm"
+            aria-label="Search datasets and forecasts"
           />
+          {searchOpen && q && (
+            <div
+              className="absolute top-full mt-1 left-0 w-72 rounded-lg z-30 shadow-lg overflow-hidden"
+              style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+            >
+              {searchResults.length === 0 ? (
+                <p className="px-3 py-3 text-xs text-muted-foreground">No datasets or forecasts match “{searchValue.trim()}”</p>
+              ) : (
+                searchResults.map((r) => (
+                  <button
+                    key={r.key}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => goToResult(r.href)}
+                    className="flex items-center justify-between gap-3 w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors"
+                  >
+                    <span className="truncate text-foreground">{r.label}</span>
+                    <span className="text-xs shrink-0 text-muted-foreground">{r.kind}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         {/* Last updated */}

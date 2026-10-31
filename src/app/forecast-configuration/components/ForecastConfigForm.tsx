@@ -10,6 +10,7 @@ import { useNotifications } from '@/contexts/NotificationContext';
 import { useDatasets } from '@/contexts/DatasetContext';
 import { createClient } from '@/lib/supabase/client';
 import { buildRunPayload, MODEL_LABELS, type ForecastResult, type ModelId } from '@/lib/forecast/engine';
+import { loadDefaults } from '@/lib/settings';
 
 type FormValues = {
   runName: string;
@@ -58,6 +59,16 @@ export default function ForecastConfigForm() {
       outlierHandling: 'clip',
     },
   });
+
+  // Start from the defaults saved on the Settings page
+  useEffect(() => {
+    const d = loadDefaults();
+    setValue('model', d.model);
+    setValue('horizonWeeks', d.horizonWeeks);
+    setValue('confidenceLevel', d.confidence);
+    setValue('seasonality', d.seasonality);
+    setValue('outlierHandling', d.clipOutliers ? 'clip' : 'keep');
+  }, [setValue]);
 
   useEffect(() => {
     if (!getValues('dataset') && readyDatasets[0]) setValue('dataset', readyDatasets[0].id);
