@@ -8,3 +8,10 @@ COMMENT ON COLUMN public.datasets.series_data IS
     'Weekly aggregated series: { weeks: string[], values: number[], categories: {name, values[]}[], dateColumn, valueColumn, categoryColumn }';
 
 -- Existing RLS policy (users_manage_own_datasets) already covers the new column.
+
+-- Real per-run diagnostics (model leaderboard, seasonal profile, hold-out error) shown on the Forecast Analysis page.
+ALTER TABLE public.forecast_runs
+    ADD COLUMN IF NOT EXISTS diagnostics JSONB;
+
+COMMENT ON COLUMN public.forecast_runs.diagnostics IS
+    'Run diagnostics: { modelLabel, seasonLength, backtestWeeks, historyWeeks, mape, rmse, leaderboard[], seasonalProfile[], notes[] }';

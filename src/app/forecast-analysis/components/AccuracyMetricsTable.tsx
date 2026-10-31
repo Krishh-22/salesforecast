@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ArrowUpDown, UploadCloud } from 'lucide-react';
+import React from 'react';
+import { Trophy, UploadCloud } from 'lucide-react';
 import Link from 'next/link';
-
-type SortKey = 'segment' | 'mape' | 'rmse' | 'r2' | 'ciWidth';
+import type { RunDiagnostics } from '@/lib/forecast/engine';
 
 interface SegmentRow {
   segment: string;
@@ -14,134 +13,138 @@ interface SegmentRow {
 }
 
 interface Props {
+  diagnostics: RunDiagnostics | null;
   segmentData: SegmentRow[];
-  model?: string;
+  modelUsedLabel?: string;
+  horizonWeeks?: number;
 }
 
-function formatK(v: number) {
-  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
-  if (v >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
-  return `$${v}`;
+function formatMoney(v: number) {
+  const a = Math.abs(v);
+  if (a >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
+  if (a >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
+  return `$${Math.round(v)}`;
 }
 
-export default function AccuracyMetricsTable({ segmentData, model }: Props) {
-  const [sortKey, setSortKey] = useState<SortKey>('mape');
-  const [sortAsc, setSortAsc] = useState(true);
+export default function AccuracyMetricsTable({ diagnostics, segmentData, modelUsedLabel, horizonWeeks }: Props) {
+  const board = [...(diagnostics?.leaderboard ?? [])].sort((a, b) => (a.mape ?? Infinity) - (b.mape ?? Infinity));
+  const segments = [...(segmentData ?? [])].sort((a, b) => b.predicted - a.predicted);
+  const hasAnything = board.length > 0 || segments.length > 0;
 
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) setSortAsc((v) => !v);
-    else { setSortKey(key); setSortAsc(true); }
-  };
-
-  const SortHeader = ({ label, k }: { label: string; k: SortKey }) => (
-    <th
-      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide cursor-pointer select-none transition-colors"
-      style={{ color: sortKey === k ? 'var(--primary)' : 'var(--muted-foreground)' }}
-      onClick={() => handleSort(k)}
-    >
-      <div className="flex items-center gap-1">
-        {label}
-        <ArrowUpDown size={11} />
-      </div>
-    </th>
-  );
-
-  // Derive accuracy metrics from segment data
-  const rows = (segmentData ?? []).map((s) => {
-    const mape = s.actual > 0 ? Math.abs((s.actual - s.predicted) / s.actual) * 100 : 0;
-    const rmse = Math.abs(s.actual - s.predicted);
-    const r2 = Math.max(0, 1 - (rmse * rmse) / (s.actual * s.actual * 0.1));
-    const ciWidth = Math.round(s.predicted * 0.12);
-    const bias = s.predicted > s.actual ? 'Over' : 'Under';
-    const trend = s.growth > 0 ? '↑' : '↓';
-    const status = mape < 5 ? 'Excellent' : mape < 10 ? 'Good' : 'Review';
-    return { segment: s.segment, model: model ?? 'Prophet', mape, rmse, r2, ciWidth, bias, trend, status };
-  });
-
-  const sorted = [...rows].sort((a, b) => {
-    const av = a[sortKey as keyof typeof a] as number | string;
-    const bv = b[sortKey as keyof typeof b] as number | string;
-    if (typeof av === 'number' && typeof bv === 'number') return sortAsc ? av - bv : bv - av;
-    return sortAsc ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
-  });
-
-  const statusColor = (s: string) => {
-    if (s === 'Excellent') return 'var(--success, #22c55e)';
-    if (s === 'Good') return 'var(--primary)';
-    return 'var(--warning, #f59e0b)';
-  };
-
-  return (
-    <div className="card-elevated overflow-hidden">
-      <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
-        <div>
-          <h2 className="text-base font-semibold text-foreground">Accuracy Metrics by Segment</h2>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
-            {sorted.length > 0 ? `${sorted.length} segments · ${model ?? 'Prophet'} model` : 'Run a forecast to see accuracy metrics'}
+  if (!hasAnything) {
+    return (
+      <div className="card-elevated overflow-hidden">
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <UploadCloud size={32} style={{ color: 'var(--muted-foreground)' }} className="mb-3 opacity-40" />
+          <p className="text-sm font-medium text-foreground mb-1">No accuracy data yet</p>
+          <p className="text-xs mb-3" style={{ color: 'var(--muted-foreground)' }}>
+            Run a forecast to see how each model performed
           </p>
+          <Link href="/forecast-configuration" className="btn-primary text-xs px-3 py-1.5 h-auto">
+            Run a Forecast
+          </Link>
         </div>
       </div>
+    );
+  }
 
-      <div className="overflow-x-auto scrollbar-thin">
-        <table className="w-full text-sm">
-          <thead>
-            <tr style={{ background: 'var(--muted)' }}>
-              <SortHeader label="Segment" k="segment" />
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--muted-foreground)' }}>Model</th>
-              <SortHeader label="MAPE" k="mape" />
-              <SortHeader label="RMSE" k="rmse" />
-              <SortHeader label="R²" k="r2" />
-              <SortHeader label="CI Width" k="ciWidth" />
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--muted-foreground)' }}>Bias</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--muted-foreground)' }}>Trend</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--muted-foreground)' }}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.length === 0 ? (
-              <tr>
-                <td colSpan={9}>
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <UploadCloud size={32} style={{ color: 'var(--muted-foreground)' }} className="mb-3 opacity-40" />
-                    <p className="text-sm font-medium text-foreground mb-1">No accuracy data yet</p>
-                    <p className="text-xs mb-3" style={{ color: 'var(--muted-foreground)' }}>
-                      No data yet — upload a file to get started
-                    </p>
-                    <Link href="/data-upload" className="btn-primary text-xs px-3 py-1.5 h-auto">
-                      Upload Data
-                    </Link>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              sorted.map((row, i) => (
-                <tr
-                  key={`seg-row-${i}`}
-                  className="transition-colors"
-                  style={{ borderBottom: '1px solid var(--border)' }}
-                >
-                  <td className="px-4 py-3 text-xs font-semibold text-foreground">{row.segment}</td>
-                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--muted-foreground)' }}>{row.model}</td>
-                  <td className="px-4 py-3 text-xs font-mono font-semibold" style={{ color: 'var(--primary)' }}>{row.mape.toFixed(1)}%</td>
-                  <td className="px-4 py-3 text-xs font-mono">{formatK(row.rmse)}</td>
-                  <td className="px-4 py-3 text-xs font-mono">{row.r2.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-xs font-mono">{formatK(row.ciWidth)}</td>
-                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--muted-foreground)' }}>{row.bias}</td>
-                  <td className="px-4 py-3 text-xs font-semibold">{row.trend}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                      style={{ color: statusColor(row.status), background: `${statusColor(row.status)}20` }}
+  return (
+    <div className="space-y-6">
+      {board.length > 0 && (
+        <div className="card-elevated overflow-hidden">
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+            <h2 className="text-base font-semibold text-foreground">Model Accuracy (Backtest)</h2>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
+              {diagnostics?.backtestWeeks
+                ? `Each model was trained without the last ${diagnostics.backtestWeeks} weeks, then asked to predict them. Lower error is better.`
+                : 'History was too short to measure accuracy on a hold-out window.'}
+            </p>
+          </div>
+          <div className="overflow-x-auto scrollbar-thin">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ background: 'var(--muted)' }}>
+                  {['Model', 'MAPE', 'RMSE', ''].map((h, i) => (
+                    <th
+                      key={`lb-h-${i}`}
+                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide"
+                      style={{ color: 'var(--muted-foreground)' }}
                     >
-                      {row.status}
-                    </span>
-                  </td>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {board.map((r) => {
+                  const used = r.label === (modelUsedLabel ?? diagnostics?.modelLabel);
+                  return (
+                    <tr key={`lb-${r.model}`} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td className="px-4 py-3 text-xs font-semibold text-foreground">{r.label}</td>
+                      <td className="px-4 py-3 text-xs font-mono">{r.mape !== null ? `${r.mape.toFixed(1)}%` : '—'}</td>
+                      <td className="px-4 py-3 text-xs font-mono">{r.rmse !== null ? formatMoney(r.rmse) : '—'}</td>
+                      <td className="px-4 py-3">
+                        {used && (
+                          <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--positive)' }}>
+                            <Trophy size={12} /> Used for this forecast
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="px-5 py-3 text-xs" style={{ color: 'var(--muted-foreground)', borderTop: '1px solid var(--border)' }}>
+            MAPE = average percentage error · RMSE = typical size of the error in sales units.
+          </p>
+        </div>
+      )}
+
+      {segments.length > 0 && (
+        <div className="card-elevated overflow-hidden">
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+            <h2 className="text-base font-semibold text-foreground">Segment Outlook</h2>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--muted-foreground)' }}>
+              Total over the last {horizonWeeks ?? 12} weeks versus the forecast for the next {horizonWeeks ?? 12} weeks
+            </p>
+          </div>
+          <div className="overflow-x-auto scrollbar-thin">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ background: 'var(--muted)' }}>
+                  {['Segment', 'Last period', 'Forecast', 'Change'].map((h) => (
+                    <th
+                      key={`seg-h-${h}`}
+                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide"
+                      style={{ color: 'var(--muted-foreground)' }}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {segments.map((s) => (
+                  <tr key={`seg-${s.segment}`} style={{ borderBottom: '1px solid var(--border)' }}>
+                    <td className="px-4 py-3 text-xs font-semibold text-foreground">{s.segment}</td>
+                    <td className="px-4 py-3 text-xs font-mono">{formatMoney(s.actual)}</td>
+                    <td className="px-4 py-3 text-xs font-mono">{formatMoney(s.predicted)}</td>
+                    <td
+                      className="px-4 py-3 text-xs font-mono font-semibold"
+                      style={{ color: s.growth >= 0 ? 'var(--positive)' : 'var(--negative)' }}
+                    >
+                      {s.growth >= 0 ? '↑ +' : '↓ '}
+                      {s.growth.toFixed(1)}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

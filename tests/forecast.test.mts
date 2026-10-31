@@ -1,5 +1,5 @@
 import { parseCsv, detectColumns, buildSeries, generateSampleCsv, parseNumber, parseDateToDay } from '../src/lib/forecast/data.ts';
-import { runForecast, buildRunPayload, zScore } from '../src/lib/forecast/engine.ts';
+import { runForecast, buildRunPayload, zScore, computeSeasonalProfile } from '../src/lib/forecast/engine.ts';
 
 let fail = 0;
 const ok = (c: boolean, m: string) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fail++; };
@@ -58,6 +58,19 @@ let err = 0; const f = known.forecastData.filter(p => p.actual === null);
 for (let k = 0; k < 13; k++) err += Math.abs(f[k].predicted - truth[k]) / truth[k];
 ok(known.seasonLength === 13, 'detects 13-week season');
 ok(err / 13 * 100 < 3, 'known-pattern forecast error < 3%: ' + (err / 13 * 100).toFixed(2) + '% via ' + known.modelUsed);
+
+
+// --- diagnostics stored with each run
+const diag = payload.row.diagnostics;
+ok(diag.leaderboard.length === 4 && diag.modelLabel === auto.modelLabel, 'diagnostics carry leaderboard + model label');
+ok(diag.seasonalProfile.length === 52 && diag.seasonLength === 52, 'seasonal profile has one point per week of the 52-week cycle');
+const sp = diag.seasonalProfile.map((p: any) => p.effect);
+ok(Math.abs(sp.reduce((a: number, b: number) => a + b, 0)) <= 52, 'seasonal effects are centred on zero');
+const festPeak = diag.seasonalProfile.reduce((a: any, b: any) => (b.effect > a.effect ? b : a));
+console.log('seasonal peak at', festPeak.label, '(+' + festPeak.effect + ') — sample data has a festival bump around Oct/Nov');
+ok(/Oct|Nov|Sep/.test(festPeak.label), 'seasonal peak lands in the festival season (Sep-Nov)');
+ok(computeSeasonalProfile(weeks.slice(0, 20), vals.slice(0, 20), 13).length === 0, 'no profile without 2 full cycles');
+ok(JSON.stringify(payload.row).length < 200000, 'stored payload stays small (' + JSON.stringify(payload.row).length + ' bytes)');
 
 // --- edge cases
 const mon = parseCsv('date,sales\n2024-01-01,10\n2024-02-01,12\n2024-03-01,14\n2024-04-01,13\n2024-05-01,15\n2024-06-01,16\n2024-07-01,15\n2024-08-01,17\n2024-09-01,18\n2024-10-01,17\n2024-11-01,19\n2024-12-01,20');

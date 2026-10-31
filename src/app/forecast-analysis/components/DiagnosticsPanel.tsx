@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import dynamic from 'next/dynamic';
 import { ChartSkeleton } from '@/components/ui/LoadingSkeleton';
+import type { SeasonalPoint } from '@/lib/forecast/engine';
 
 const ResidualsChart = dynamic(() => import('./ResidualsChart'), { ssr: false, loading: () => <ChartSkeleton height="h-48" /> });
 const SeasonalityChart = dynamic(() => import('./SeasonalityChart'), { ssr: false, loading: () => <ChartSkeleton height="h-48" /> });
@@ -11,30 +12,34 @@ interface ForecastPoint {
   week: string;
   actual: number | null;
   predicted: number;
-  lower: number;
-  upper: number;
+  lower: number | null;
+  upper: number | null;
 }
 
 interface Props {
   data: ForecastPoint[];
+  seasonalProfile: SeasonalPoint[];
+  seasonLength: number;
 }
 
-export default function DiagnosticsPanel({ data }: Props) {
+export default function DiagnosticsPanel({ data, seasonalProfile, seasonLength }: Props) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="card-elevated p-5">
-        <h3 className="text-sm font-semibold text-foreground mb-1">Residuals Distribution</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-1">Residuals (in-sample)</h3>
         <p className="text-xs mb-4" style={{ color: 'var(--muted-foreground)' }}>
-          Prediction errors over time — should be centered around zero with no pattern
+          Actual minus fitted value per week — a good model scatters around zero with no pattern
         </p>
         <ResidualsChart data={data ?? []} />
       </div>
       <div className="card-elevated p-5">
-        <h3 className="text-sm font-semibold text-foreground mb-1">Seasonality Component</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-1">Seasonal Pattern</h3>
         <p className="text-xs mb-4" style={{ color: 'var(--muted-foreground)' }}>
-          Detected weekly seasonality pattern extracted by Prophet model
+          {seasonLength > 0
+            ? `Average effect on weekly sales across the detected ${seasonLength}-week cycle, after removing the trend`
+            : 'Average repeating effect on weekly sales after removing the trend'}
         </p>
-        <SeasonalityChart data={data ?? []} />
+        <SeasonalityChart profile={seasonalProfile ?? []} />
       </div>
     </div>
   );

@@ -111,7 +111,7 @@ export default function ForecastConfigForm() {
 
       if (error) {
         console.log('Forecast run insert error:', error.message);
-        toast.error('Forecast finished but could not be saved — please try again');
+        toast.error(/diagnostics/i.test(error.message) ? 'Database is missing the "diagnostics" column — run the latest migration in supabase/migrations/' : 'Forecast finished but could not be saved — please try again');
         setIsRunning(false);
         return;
       }
@@ -132,6 +132,7 @@ export default function ForecastConfigForm() {
         dataCoverage: inserted.data_coverage,
         forecastData: inserted.forecast_data,
         segmentData: inserted.segment_data,
+        diagnostics: inserted.diagnostics ?? null,
         createdAt: inserted.created_at,
         completedAt: inserted.completed_at,
       });

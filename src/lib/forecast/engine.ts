@@ -41,12 +41,28 @@ export type ForecastPoint = {
 
 export type LeaderboardRow = { model: ModelId; label: string; mape: number | null; rmse: number | null };
 
+export type SeasonalPoint = { label: string; effect: number };
+
+/** Stored with every run (forecast_runs.diagnostics) so the Analysis page can show real, not invented, numbers. */
+export type RunDiagnostics = {
+  modelLabel: string;
+  seasonLength: number;
+  backtestWeeks: number;
+  historyWeeks: number;
+  mape: number | null;
+  rmse: number | null;
+  leaderboard: LeaderboardRow[];
+  seasonalProfile: SeasonalPoint[];
+  notes: string[];
+};
+
 export type ForecastResult = {
   modelUsed: ModelId;
   modelLabel: string;
   seasonLength: number;
   forecastData: ForecastPoint[];
   leaderboard: LeaderboardRow[];
+  seasonalProfile: SeasonalPoint[];
   metrics: {
     mape: number | null; // % on hold-out
     rmse: number | null;
@@ -137,6 +153,28 @@ export function detectSeasonLength(y: number[], allowYearly = true): number {
     }
   }
   return best;
+}
+
+/**
+ * Average de-trended deviation at each position of the seasonal cycle (centred on zero).
+ * Positions are counted from the first week of the series; labels use the dates of the first cycle.
+ */
+export function computeSeasonalProfile(weeks: string[], y: number[], m: number): SeasonalPoint[] {
+  if (m < 2 || y.length < 2 * m) return [];
+  const { a, b } = olsLine(y);
+  const sums = new Array(m).fill(0);
+  const counts = new Array(m).fill(0);
+  for (let t = 0; t < y.length; t++) {
+    sums[t % m] += y[t] - (a + b * t);
+    counts[t % m]++;
+  }
+  const raw: number[] = sums.map((s: number, j: number) => s / counts[j]);
+  const c = mean(raw);
+  return raw.map((v, j) => {
+    const d = new Date(weeks[j] + 'T00:00:00Z');
+    const mon = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getUTCMonth()];
+    return { label: m >= 26 ? `${d.getUTCDate()} ${mon}` : `Wk ${j + 1}`, effect: Math.round(v - c) };
+  });
 }
 
 function nonNegative(y: number[]): boolean {
@@ -430,6 +468,7 @@ export function runForecast(weeks: string[], values: number[], opts: ForecastOpt
     seasonLength: m >= 2 ? m : 0,
     forecastData: data,
     leaderboard,
+    seasonalProfile: computeSeasonalProfile(weeks, y, m),
     metrics: {
       mape: row?.mape ?? null,
       rmse: row?.rmse ?? null,
@@ -499,6 +538,17 @@ export function buildRunPayload(
       data_coverage: `${totalRows.toLocaleString()} rows`,
       forecast_data: result.forecastData,
       segment_data: segment.length ? segment : null,
+      diagnostics: {
+        modelLabel: result.modelLabel,
+        seasonLength: result.seasonLength,
+        backtestWeeks: result.metrics.backtestWeeks,
+        historyWeeks: result.metrics.historyWeeks,
+        mape: result.metrics.mape,
+        rmse: result.metrics.rmse,
+        leaderboard: result.leaderboard,
+        seasonalProfile: result.seasonalProfile,
+        notes: result.notes,
+      } as RunDiagnostics,
       completed_at: new Date().toISOString(),
     },
   };

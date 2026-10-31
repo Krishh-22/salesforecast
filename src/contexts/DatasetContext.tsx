@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { SeriesData } from '@/lib/forecast/data';
+import type { RunDiagnostics } from '@/lib/forecast/engine';
 
 export interface Dataset {
   id: string;
@@ -34,6 +35,7 @@ export interface ForecastRun {
   dataCoverage: string | null;
   forecastData: any | null;
   segmentData: any | null;
+  diagnostics: RunDiagnostics | null;
   createdAt: string;
   completedAt: string | null;
 }
@@ -133,6 +135,7 @@ export function DatasetProvider({ children }: { children: React.ReactNode }) {
           dataCoverage: row.data_coverage,
           forecastData: row.forecast_data,
           segmentData: row.segment_data,
+          diagnostics: row.diagnostics ?? null,
           createdAt: row.created_at,
           completedAt: row.completed_at,
         }))
