@@ -51,6 +51,8 @@ interface DatasetContextValue {
   addDataset: (dataset: Dataset) => void;
   addForecastRun: (run: ForecastRun) => void;
   updateForecastRun: (id: string, updates: Partial<ForecastRun>) => void;
+  /** Deletes a dataset (and, via ON DELETE CASCADE, its forecast runs). Returns true on success. */
+  deleteDataset: (id: string) => Promise<boolean>;
 }
 
 const DatasetContext = createContext<DatasetContextValue | null>(null);
@@ -161,6 +163,23 @@ export function DatasetProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const deleteDataset = useCallback(async (id: string) => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from('datasets').delete().eq('id', id);
+      if (error) {
+        console.log('Dataset delete error:', error.message);
+        return false;
+      }
+      setDatasets((prev) => prev.filter((d) => d.id !== id));
+      setForecastRuns((prev) => prev.filter((r) => r.datasetId !== id));
+      return true;
+    } catch (err: any) {
+      console.log('Dataset delete failed:', err?.message);
+      return false;
+    }
+  }, []);
+
   useEffect(() => {
     refreshDatasets();
     refreshForecasts();
@@ -181,6 +200,7 @@ export function DatasetProvider({ children }: { children: React.ReactNode }) {
         addDataset,
         addForecastRun,
         updateForecastRun,
+        deleteDataset,
       }}
     >
       {children}

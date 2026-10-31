@@ -4,6 +4,8 @@ import React from 'react';
 import { Bell, CheckCircle2, AlertCircle, AlertTriangle, Info, CheckCheck } from 'lucide-react';
 import { useNotifications, AppNotification } from '@/contexts/NotificationContext';
 import { useRouter } from 'next/navigation';
+import { useDatasets } from '@/contexts/DatasetContext';
+import { deriveInsights, type ReportRun } from '@/lib/forecast/report';
 
 function timeAgo(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -26,6 +28,8 @@ function NotifIcon({ type }: { type: AppNotification['type'] }) {
 export default function AlertsPanel() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const router = useRouter();
+  const { latestForecast } = useDatasets();
+  const insights = deriveInsights(latestForecast ? (latestForecast as unknown as ReportRun) : null);
 
   const handleClick = (n: AppNotification) => {
     markAsRead(n.id);
@@ -58,7 +62,34 @@ export default function AlertsPanel() {
         )}
       </div>
 
-      {notifications.length === 0 ? (
+      {insights.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--muted-foreground)' }}>
+            Insights from your latest forecast
+          </p>
+          {insights.map((i) => (
+            <div
+              key={`insight-${i.title}`}
+              className="flex items-start gap-3 p-3 rounded-lg"
+              style={{
+                background: i.level === 'warning' ? 'var(--warning-bg)' : i.level === 'success' ? 'var(--positive-bg)' : 'var(--info-bg)',
+              }}
+            >
+              <div className="mt-0.5 shrink-0">
+                <NotifIcon type={i.level} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold leading-snug text-foreground">{i.title}</p>
+                <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--muted-foreground)' }}>
+                  {i.message}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {notifications.length === 0 && insights.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center py-8 text-center">
           <Bell size={32} style={{ color: 'var(--muted-foreground)' }} className="mb-3 opacity-50" />
           <p className="text-sm font-medium text-foreground mb-1">No alerts</p>
@@ -66,7 +97,7 @@ export default function AlertsPanel() {
             No data yet — upload a file to get started
           </p>
         </div>
-      ) : (
+      ) : notifications.length === 0 ? null : (
         <div className="flex-1 overflow-y-auto space-y-2 -mx-1 px-1">
           {notifications.slice(0, 10).map((n) => (
             <div

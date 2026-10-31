@@ -6,7 +6,7 @@ export default function DataManagementPage() {
   return (
     <AppLayout
       title="Data Management"
-      subtitle="Manage uploaded datasets, quality scores, and column profiles"
+      subtitle="Review, profile, download and delete your uploaded datasets"
     >
       <DatasetTable />
     </AppLayout>
