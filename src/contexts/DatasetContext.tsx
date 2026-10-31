@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import type { SeriesData } from '@/lib/forecast/data';
 
 export interface Dataset {
   id: string;
@@ -13,6 +14,8 @@ export interface Dataset {
   fileSize: string;
   status: string;
   uploadedAt: string;
+  /** Parsed weekly series (null for datasets uploaded before real parsing existed). */
+  seriesData: SeriesData | null;
 }
 
 export interface ForecastRun {
@@ -85,6 +88,7 @@ export function DatasetProvider({ children }: { children: React.ReactNode }) {
           fileSize: row.file_size,
           status: row.status,
           uploadedAt: row.uploaded_at,
+          seriesData: row.series_data ?? null,
         }))
       );
     } catch (err: any) {

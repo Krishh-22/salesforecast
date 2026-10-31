@@ -23,8 +23,10 @@ export default function MetricsBentoGrid() {
     : EMPTY_VALUE;
 
   const growthRate = latestForecast?.growthRate != null
-    ? `+${latestForecast.growthRate.toFixed(1)}%`
+    ? `${latestForecast.growthRate >= 0 ? '+' : ''}${latestForecast.growthRate.toFixed(1)}%`
     : EMPTY_VALUE;
+  const horizon = latestForecast?.horizonWeeks ?? 12;
+  const ciLevel = latestForecast?.confidenceLevel ?? 80;
 
   const avgCiWidth = latestForecast?.avgCiWidth != null
     ? `±${latestForecast.avgCiWidth.toFixed(1)}%`
@@ -39,7 +41,7 @@ export default function MetricsBentoGrid() {
       {/* Hero — Projected Revenue */}
       <div className="col-span-2">
         <MetricCard
-          label="Projected Revenue — Next 12 Weeks"
+          label={`Projected Revenue — Next ${horizon} Weeks`}
           value={projectedRevenue}
           subValue={latestForecast ? `Based on ${latestForecast.runName}` : subValue}
           variant="hero"
@@ -52,16 +54,16 @@ export default function MetricsBentoGrid() {
       <MetricCard
         label="Forecast Accuracy (MAPE)"
         value={mape}
-        subValue={latestForecast ? 'Lower is better' : subValue}
+        subValue={latestForecast ? (latestForecast.mape != null ? 'Hold-out error · lower is better' : 'Not enough history to measure') : subValue}
         variant="default"
         icon={<Activity size={16} style={{ color: 'var(--muted-foreground)' }} />}
       />
 
       {/* Growth Rate */}
       <MetricCard
-        label="MoM Growth Rate"
+        label="Projected Growth"
         value={growthRate}
-        subValue={latestForecast ? 'Month-over-month' : subValue}
+        subValue={latestForecast ? `vs. previous ${horizon} weeks` : subValue}
         variant="default"
         icon={<Percent size={16} style={{ color: 'var(--muted-foreground)' }} />}
       />
@@ -70,7 +72,7 @@ export default function MetricsBentoGrid() {
       <MetricCard
         label="Avg. CI Width"
         value={avgCiWidth}
-        subValue={latestForecast ? '80% confidence interval' : subValue}
+        subValue={latestForecast ? `${ciLevel}% confidence interval` : subValue}
         variant="default"
         icon={<BarChart2 size={16} style={{ color: 'var(--muted-foreground)' }} />}
       />

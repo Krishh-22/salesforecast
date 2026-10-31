@@ -1,207 +1,96 @@
-# 📈 Sales Forecasting
+# 📈 SalesForecast
 
-An sales forecasting platform that helps businesses predict future sales trends using historical data and machine learning insights. The application provides interactive dashboards, visual analytics, and accurate forecasting to support smarter business decisions.
+A web app that turns a sales CSV into a forecast you can trust: upload your history, the app validates it, trains several
+time-series models, **backtests them on recent weeks**, picks the most accurate one and shows the next weeks with a
+confidence band.
 
----
+> Built with Next.js 15, React 19, TypeScript, Tailwind CSS, Recharts and Supabase (auth + Postgres with Row Level Security).
 
-# ✨ Features
+## ✨ What it does
 
-* 📊 Interactive sales analytics dashboard.
-* 🤖 AI-powered sales forecasting
-* 📈 Historical sales trend visualization
-* ⚡ Fast and optimized with Next.js 15
-* 🎨 Modern responsive UI built with Tailwind CSS
-* 🔒 Type-safe development using TypeScript
-* 📱 Mobile-friendly responsive design
-* 🧩 Modular and reusable component architecture
-* 🚀 Optimized performance and SEO
+| Feature | Details |
+| --- | --- |
+| **Real CSV import** | Parses quoted fields, `, ; \| tab` delimiters, `DD/MM/YYYY` and `MM/DD/YYYY` dates, `₹ 1,23,456.50`-style numbers |
+| **Auto column detection** | Finds the date, sales and category columns; you can override each one |
+| **Honest validation** | Reports unreadable dates, non-numeric values, negatives, missing weeks (interpolated), partial edge weeks, monthly data (rejected) and too-short history |
+| **4 forecasting models** | Holt-Winters (damped), Linear trend + seasonality, Seasonal naive, Moving average |
+| **Auto model selection** | Each model is backtested on the most recent weeks; the lowest-error model is used. A leaderboard shows all of them |
+| **Seasonality detection** | Autocorrelation picks a 4 / 13 / 52-week cycle, or none |
+| **Confidence intervals** | Band width comes from the hold-out error and widens with the horizon |
+| **Segment outlook** | Per-category actual-vs-forecast bars when a category column exists |
+| **Accounts & privacy** | Supabase Auth; every table is protected by Row Level Security so users only see their own data |
+| **Try sample data** | One click loads a synthetic 3-year retail dataset |
 
----
+## 🧠 How the forecast is computed
 
-# 🛠️ Tech Stack
+1. The CSV is aggregated into **weekly totals** (Monday-based weeks). Partial first/last weeks are dropped; empty weeks are
+   filled by linear interpolation and reported as a warning.
+2. The seasonal cycle is chosen from the autocorrelation of the de-trended series (candidates: 4, 13, 52 weeks).
+3. Every model is fitted on all-but-the-last *N* weeks and scored on those *N* weeks (**MAPE** and **RMSE**).
+4. The best model is refitted on all the data and projected forward. The interval is `prediction ± z·σ·√(1 + 0.1·h)`, where σ
+   is the larger of the hold-out and in-sample RMSE and *h* is the weeks ahead (a pragmatic approximation, not an exact
+   statistical interval).
 
-| Technology   | Purpose            |
-| ------------ | ------------------ |
-| Next.js 15   | Frontend Framework |
-| React 19     | UI Library         |
-| TypeScript   | Type Safety        |
-| Tailwind CSS | Styling            |
-| ESLint       | Code Quality       |
-| Prettier     | Code Formatting    |
+All of this runs in the browser (`src/lib/forecast/`) — there is no separate ML server. The engine has no dependencies and
+is covered by Node tests (see below).
 
----
-
-# 📂 Project Structure
-
-```text
-.
-├── public/
-│   ├── assets/
-│   └── images/
-│
-├── src/
-│   ├── app/
-│   │   ├── layout.tsx
-│   │   ├── page.tsx
-│   │   └── globals.css
-│   │
-│   ├── components/
-│   │   ├── ui/
-│   │   ├── charts/
-│   │   ├── dashboard/
-│   │   └── layout/
-│   │
-│   ├── hooks/
-│   ├── lib/
-│   ├── utils/
-│   └── types/
-│
-├── package.json
-├── next.config.mjs
-├── tsconfig.json
-├── tailwind.config.js
-└── README.md
-```
-
----
-
-# 🚀 Getting Started
-
-## 1. Clone the Repository
+## 🚀 Getting started
 
 ```bash
-git clone <repository-url>
-```
-
-```bash
-cd Sales-Forecasting
-```
-
----
-
-## 2. Install Dependencies
-
-Using npm
-
-```bash
+git clone https://github.com/Maxx825/salesforecast.git
+cd salesforecast
 npm install
+cp .env.example .env.local     # then fill in your Supabase URL + anon key
+npm run dev                    # http://localhost:4028
 ```
 
-Using yarn
+### Database setup (Supabase)
 
-```bash
-yarn
+Run the SQL files in `supabase/migrations/` **in order** in the Supabase SQL editor (or with `supabase db push`). The latest
+one, `20261030000000_dataset_series.sql`, adds the `series_data` column that stores each dataset's weekly series.
+
+### Scripts
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Development server on port 4028 |
+| `npm run build` | Production build |
+| `npm run start` | Run the production build (after `build`) |
+| `npm run type-check` | TypeScript check |
+| `npm run lint` | ESLint |
+
+## 📂 Project structure
+
+```
+src/
+├── app/                    # Next.js routes (dashboard, data-upload, forecast-configuration, …)
+├── components/             # Layout + reusable UI
+├── contexts/               # Auth, datasets/forecast runs, notifications, theme
+└── lib/
+    ├── forecast/
+    │   ├── data.ts         # CSV parsing, column detection, validation, weekly aggregation, sample data
+    │   └── engine.ts       # Models, backtesting, confidence intervals, run payloads
+    └── supabase/           # Browser/server Supabase clients
+supabase/migrations/        # Tables, Row Level Security, series storage
 ```
 
-Using pnpm
+## ⚠️ Current limitations
 
-```bash
-pnpm install
-```
+- CSV only (Excel files must be saved as CSV first).
+- Forecasts weekly totals — monthly-only data is rejected with an explanation.
+- Models are classical statistical methods; they do not use external signals (holidays, promotions, price changes).
+- The Forecast Analysis, Reports & Export, Data Management, Workspace Admin and Help pages are still UI prototypes with
+  static content.
 
----
+## 🗺️ Roadmap
 
-## 3. Run the Development Server
+- Excel import, monthly granularity
+- Festival / promotion calendar features (Diwali, Eid, sales events)
+- What-if scenarios (price / discount sliders)
+- PDF / Excel report export
+- Python (FastAPI) service for Prophet / gradient-boosting models
+- Automated tests and CI
 
-```bash
-npm run dev
-```
+## 📝 License
 
-Visit:
-
-```text
-[http://localhost:4028](http://localhost:4028)
-```
-
----
-
-# 📦 Available Scripts
-
-| Command            | Description                   |
-| ------------------ | ----------------------------- |
-| `npm run dev`      | Start the development server  |
-| `npm run build`    | Create a production build     |
-| `npm run start`    | Start the application         |
-| `npm run serve`    | Serve the production build    |
-| `npm run lint`     | Run ESLint                    |
-| `npm run lint:fix` | Automatically fix lint issues |
-| `npm run format`   | Format code with Prettier     |
-
----
-
-# 📊 Project Highlights
-
-* AI-driven sales forecasting
-* Interactive business dashboard
-* Clean and scalable architecture
-* High-performance Next.js application
-* Responsive design across all devices
-* Reusable UI component system
-* TypeScript-powered maintainability
-
----
-
-# 📱 Responsive Design
-
-Optimized for:
-
-* 💻 Desktop
-* 📱 Mobile
-* 📲 Tablet
-* 🖥️ Large Displays
-
----
-
-# 🚀 Production Build
-
-Generate an optimized production build:
-
-```bash
-npm run build
-```
-
-Run the production server:
-
-```bash
-npm run serve
-```
-
----
-
-# 🤝 Contributing
-
-Contributions are always welcome!
-
-1. Fork the repository
-2. Create a new feature branch
-
-```bash
-git checkout -b feature/your-feature
-```
-
-3. Commit your changes
-
-```bash
-git commit -m "Add new feature"
-```
-
-4. Push the branch
-
-```bash
-git push origin feature/your-feature
-```
-
-5. Open a Pull Request
-
-
----
-
-# 🙏 Acknowledgments
-
-* Built with **Next.js 15**
-* Powered by **React 19**
-* Styled using **Tailwind CSS**
-* Developed with **TypeScript**
-* Designed for modern business intelligence and sales analytics
-
----
+MIT
