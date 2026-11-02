@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import AppLogo from '@/components/ui/AppLogo';
 import {
   LayoutDashboard,
@@ -18,7 +19,6 @@ import {
   Users,
   UserCog,
 } from 'lucide-react';
-import Icon from '@/components/ui/AppIcon';
 
 
 interface NavItem {
@@ -48,6 +48,22 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, signOut } = useAuth();
+  const displayName: string = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Account';
+  const initials =
+    displayName
+      .split(/[\s._-]+/)
+      .filter(Boolean)
+      .map((p: string) => p[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || 'U';
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
   return (
     <aside
@@ -130,16 +146,21 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           style={{ borderTop: '1px solid var(--border)', marginTop: '8px', paddingTop: '12px' }}>
           <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-semibold text-white"
             style={{ background: 'var(--primary)' }}>
-            MR
+            {initials}
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">Manas Verma</p>
-              <p className="text-xs text-muted-foreground truncate">Sales Ops Manager</p>
+              <p className="text-sm font-semibold text-foreground truncate">{displayName}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email ?? ''}</p>
             </div>
           )}
           {!collapsed && (
-            <button className="text-muted-foreground hover:text-foreground transition-colors">
+            <button
+              onClick={handleSignOut}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              title="Sign out"
+              aria-label="Sign out"
+            >
               <LogOut size={16} />
             </button>
           )}

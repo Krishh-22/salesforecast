@@ -12,6 +12,7 @@ import {
   Tooltip,
   ReferenceLine,
 } from 'recharts';
+import { money } from '@/lib/forecast/report';
 
 interface ForecastPoint {
   week: string;
@@ -23,10 +24,7 @@ interface Props {
   data: ForecastPoint[];
 }
 
-function formatK(v: number) {
-  if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
-  return `${v}`;
-}
+const formatK = money;
 
 export default function ResidualsChart({ data }: Props) {
   const residuals = (data ?? [])
@@ -68,7 +66,7 @@ export default function ResidualsChart({ data }: Props) {
             width={48}
           />
           <Tooltip
-            formatter={(v: number) => [`$${formatK(v)}`, 'Residual']}
+            formatter={(v: number) => [formatK(v), 'Residual']}
             contentStyle={{ fontSize: 11 }}
           />
           <ReferenceLine y={0} stroke="var(--muted-foreground)" strokeDasharray="3 2" />

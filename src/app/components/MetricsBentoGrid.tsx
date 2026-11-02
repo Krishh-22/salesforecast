@@ -2,8 +2,9 @@
 
 import React from 'react';
 import MetricCard from '@/components/ui/MetricCard';
-import { DollarSign, Activity, Percent, BarChart2, Database } from 'lucide-react';
+import { IndianRupee, Activity, Percent, BarChart2, Database } from 'lucide-react';
 import { useDatasets } from '@/contexts/DatasetContext';
+import { money } from '@/lib/forecast/report';
 
 const EMPTY_VALUE = '—';
 const EMPTY_SUB = 'No data yet — upload a file to get started';
@@ -15,7 +16,7 @@ export default function MetricsBentoGrid() {
     n != null ? `${prefix}${n.toLocaleString()}` : EMPTY_VALUE;
 
   const projectedRevenue = latestForecast?.projectedRevenue != null
-    ? `$${(latestForecast.projectedRevenue / 1_000_000).toFixed(2)}M`
+    ? money(latestForecast.projectedRevenue)
     : EMPTY_VALUE;
 
   const mape = latestForecast?.mape != null
@@ -45,7 +46,7 @@ export default function MetricsBentoGrid() {
           value={projectedRevenue}
           subValue={latestForecast ? `Based on ${latestForecast.runName}` : subValue}
           variant="hero"
-          icon={<DollarSign size={16} style={{ color: 'var(--primary)' }} />}
+          icon={<IndianRupee size={16} style={{ color: 'var(--primary)' }} />}
           className="h-full"
         />
       </div>

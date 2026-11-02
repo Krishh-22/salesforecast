@@ -30,7 +30,7 @@ ok(!/NaN|undefined|Infinity/.test(html), 'no NaN/undefined/Infinity leaked into 
 console.log('report size', html.length, 'bytes');
 
 ok(esc(`<a href="x">&'`) === '&lt;a href=&quot;x&quot;&gt;&amp;&#39;', 'esc()');
-ok(money(1234567) === '$1.23M' && money(-2500) === '-$2.5K' && money(12) === '$12', 'money()');
+ok(money(12345678) === '₹1.23 Cr' && money(1234567) === '₹12.35 L' && money(-2500) === '-₹2.5K' && money(12) === '₹12', 'money()');
 
 // insights
 ok(deriveInsights(null).length === 0, 'no insights without a run');

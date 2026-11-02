@@ -5,6 +5,9 @@ const nextConfig = {
   productionBrowserSourceMaps: true,
   distDir: process.env.DIST_DIR || '.next',
 
+  // Hides the floating "N" Next.js badge shown in development.
+  devIndicators: false,
+
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -18,19 +21,6 @@ const nextConfig = {
     minimumCacheTTL: 60,
     qualities: [75, 85, 100],
   },
-
-  webpack(config, { dev }) {
-if (dev) {
-    config.module.rules.push({
-      test: /\.(jsx|tsx)$/,
-      exclude: [/node_modules/],
-      use: [{
-        loader: '@dhiwise/component-tagger/nextLoader',
-      }],
-    });
-  }
-
-    return config;
-  }
 };
+
 export default nextConfig;

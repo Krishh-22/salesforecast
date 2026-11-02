@@ -44,13 +44,19 @@ export function esc(s: unknown): string {
     .replace(/'/g, '&#39;');
 }
 
+/** Compact rupee amount using the Indian system: K (thousand), L (lakh), Cr (crore). */
 export function money(v: number): string {
   const a = Math.abs(v);
   const sign = v < 0 ? '-' : '';
-  if (a >= 1_000_000_000) return `${sign}$${(a / 1_000_000_000).toFixed(2)}B`;
-  if (a >= 1_000_000) return `${sign}$${(a / 1_000_000).toFixed(2)}M`;
-  if (a >= 1_000) return `${sign}$${(a / 1_000).toFixed(1)}K`;
-  return `${sign}$${Math.round(a)}`;
+  if (a >= 10_000_000) return `${sign}₹${(a / 10_000_000).toFixed(2)} Cr`;
+  if (a >= 100_000) return `${sign}₹${(a / 100_000).toFixed(2)} L`;
+  if (a >= 1_000) return `${sign}₹${(a / 1_000).toFixed(1)}K`;
+  return `${sign}₹${Math.round(a)}`;
+}
+
+/** Full rupee amount with Indian digit grouping, e.g. ₹12,34,567. */
+export function moneyFull(v: number): string {
+  return `${v < 0 ? '-' : ''}₹${Math.round(Math.abs(v)).toLocaleString('en-IN')}`;
 }
 
 function csvCell(v: unknown): string {

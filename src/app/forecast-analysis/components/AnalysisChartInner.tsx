@@ -4,6 +4,7 @@ import React from 'react';
 import { UploadCloud } from 'lucide-react';
 import Link from 'next/link';
 import { ResponsiveContainer, ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from 'recharts';
+import { money } from '@/lib/forecast/report';
 
 interface ForecastPoint {
   week: string;
@@ -20,12 +21,7 @@ interface Props {
   zoomed: boolean;
 }
 
-function formatK(v: number) {
-  const a = Math.abs(v);
-  if (a >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
-  if (a >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
-  return `$${Math.round(v)}`;
-}
+const formatK = money;
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;

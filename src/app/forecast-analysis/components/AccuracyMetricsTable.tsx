@@ -4,6 +4,7 @@ import React from 'react';
 import { Trophy, UploadCloud } from 'lucide-react';
 import Link from 'next/link';
 import type { RunDiagnostics } from '@/lib/forecast/engine';
+import { money } from '@/lib/forecast/report';
 
 interface SegmentRow {
   segment: string;
@@ -19,12 +20,7 @@ interface Props {
   horizonWeeks?: number;
 }
 
-function formatMoney(v: number) {
-  const a = Math.abs(v);
-  if (a >= 1_000_000) return `$${(v / 1_000_000).toFixed(2)}M`;
-  if (a >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
-  return `$${Math.round(v)}`;
-}
+const formatMoney = money;
 
 export default function AccuracyMetricsTable({ diagnostics, segmentData, modelUsedLabel, horizonWeeks }: Props) {
   const board = [...(diagnostics?.leaderboard ?? [])].sort((a, b) => (a.mape ?? Infinity) - (b.mape ?? Infinity));

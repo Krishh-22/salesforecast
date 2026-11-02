@@ -4,6 +4,7 @@ import React from 'react';
 import { UploadCloud } from 'lucide-react';
 import Link from 'next/link';
 import { useDatasets } from '@/contexts/DatasetContext';
+import { money, moneyFull } from '@/lib/forecast/report';
 import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, ComposedChart, Legend } from 'recharts';
 
 type Point = {
@@ -14,12 +15,6 @@ type Point = {
   upper: number | null;
 };
 
-const money = (v: number) => {
-  const a = Math.abs(v);
-  if (a >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
-  if (a >= 1_000) return `$${(v / 1_000).toFixed(0)}k`;
-  return `$${Math.round(v)}`;
-};
 
 export default function ActualVsPredictedChartInner({ range }: { range: '6m' | '12m' | '18m' }) {
   const { latestForecast, isLoadingForecasts } = useDatasets();
@@ -82,7 +77,7 @@ export default function ActualVsPredictedChartInner({ range }: { range: '6m' | '
           formatter={(value: any, name: string) => {
             if (value == null) return ['—', name];
             if (Array.isArray(value)) return [`${money(value[0])} – ${money(value[1])}`, 'Confidence range'];
-            return [`$${Number(value).toLocaleString()}`, name];
+            return [moneyFull(Number(value)), name];
           }}
         />
         <Legend wrapperStyle={{ fontSize: 11 }} />

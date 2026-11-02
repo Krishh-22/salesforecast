@@ -86,7 +86,7 @@ tests/                      # Node tests for the pure logic
 ## ⚠️ Limitations
 
 - CSV only (save Excel files as CSV first) and weekly totals only — monthly-only data is rejected with an explanation.
-- Classical statistical models; they use only past sales, not holidays, promotions or price changes.
+- Amounts are shown in Indian rupees (₹, K / L / Cr). Classical statistical models; they use only past sales, not holidays, promotions or price changes.
 - The confidence range is an approximation.
 - Reports are generated in the browser (print the HTML report to get a PDF); scheduled exports, e-mail notifications and
   team workspaces need a server and are not implemented.

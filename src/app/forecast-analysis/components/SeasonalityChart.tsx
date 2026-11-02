@@ -4,6 +4,7 @@ import React from 'react';
 import { UploadCloud } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from 'recharts';
 import type { SeasonalPoint } from '@/lib/forecast/engine';
+import { moneyFull } from '@/lib/forecast/report';
 
 interface Props {
   profile: SeasonalPoint[];
@@ -45,7 +46,7 @@ export default function SeasonalityChart({ profile }: Props) {
             width={48}
           />
           <Tooltip
-            formatter={(v: number) => [`${v >= 0 ? '+' : '−'}$${Math.abs(v).toLocaleString()}`, 'Effect on weekly sales']}
+            formatter={(v: number) => [`${v >= 0 ? '+' : '−'}${moneyFull(Math.abs(v))}`, 'Effect on weekly sales']}
             contentStyle={{ fontSize: 11 }}
           />
           <ReferenceLine y={0} stroke="var(--muted-foreground)" strokeDasharray="3 2" />

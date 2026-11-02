@@ -4,6 +4,7 @@ import React from 'react';
 import { UploadCloud } from 'lucide-react';
 import Link from 'next/link';
 import { useDatasets } from '@/contexts/DatasetContext';
+import { money, moneyFull } from '@/lib/forecast/report';
 import {
   BarChart,
   Bar,
@@ -45,8 +46,8 @@ export default function SegmentChartInner({ segment }: { segment: string }) {
 
   const chartData = latestForecast.segmentData.map((d: any) => ({
     name: d.segment.length > 12 ? d.segment.slice(0, 12) + '…' : d.segment,
-    Actual: Math.round(d.actual / 1000),
-    Predicted: Math.round(d.predicted / 1000),
+    Actual: Math.round(d.actual),
+    Predicted: Math.round(d.predicted),
   }));
 
   return (
@@ -55,10 +56,10 @@ export default function SegmentChartInner({ segment }: { segment: string }) {
         <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
         <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
         <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
-          tickFormatter={(v) => `$${v}k`} />
+          tickFormatter={(v) => money(Number(v))} width={64} />
         <Tooltip
           contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
-          formatter={(value: any, name: string) => [`$${Number(value)}k`, name]}
+          formatter={(value: any, name: string) => [moneyFull(Number(value)), name]}
         />
         <Legend wrapperStyle={{ fontSize: 11 }} />
         <Bar dataKey="Actual" fill="var(--positive)" radius={[3, 3, 0, 0]} />

@@ -4,13 +4,8 @@ import React, { useMemo } from 'react';
 import { X } from 'lucide-react';
 import { profileSeries, type SeriesProfile } from '@/lib/forecast/profile';
 import type { Dataset } from '@/contexts/DatasetContext';
+import { money } from '@/lib/forecast/report';
 
-function money(v: number): string {
-  const a = Math.abs(v);
-  if (a >= 1_000_000) return `${v < 0 ? '-' : ''}$${(a / 1_000_000).toFixed(2)}M`;
-  if (a >= 1_000) return `${v < 0 ? '-' : ''}$${(a / 1_000).toFixed(1)}K`;
-  return `${v < 0 ? '-' : ''}$${Math.round(a)}`;
-}
 
 function Sparkline({ values }: { values: number[] }) {
   if (values.length < 2) return null;
