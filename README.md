@@ -146,6 +146,7 @@ tests/                        # Tests for the pure logic
 - The confidence range is an approximation.
 - Reports are generated in the browser. Print the HTML report to get a PDF.
 - Export history and saved defaults live in the browser's local storage.
+- Unimplemented features like scheduled exports and email notifications.
 
 ---
 
